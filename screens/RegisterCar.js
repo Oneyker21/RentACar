@@ -55,11 +55,11 @@ const RegisterCar = () => {
         model,
         pricePerDay,
         vehiclePhoto,
-        vehicleId,
+        vehiclZeId,
         regDate: new Date().toISOString(),
       });
 
-      handleLimpiarCampos();
+      handleLimpiarCamposS();
       Alert.alert('Éxito', 'Vehículo registrado correctamente');
     } catch (error) {
       Alert.alert('Error', 'No se pudo registrar el vehículo: ' + error.message);

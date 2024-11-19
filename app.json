@@ -7,9 +7,7 @@
     "icon": "./assets/img/Freelearnic.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/img/Inicio.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#107ACC"
+      "resizeMode": "cover"
     },
     "ios": {
       "supportsTablet": true
