@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Image, StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../connection/firebaseConfig';
 
@@ -15,7 +14,7 @@ const RegisterCar = () => {
 
   const navigation = useNavigation();
 
-  const handleSelectPhoto = async (setImageFunction) => {
+  const handleSelectPhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Denied', 'Camera permissions are required to take photos.');
@@ -30,22 +29,16 @@ const RegisterCar = () => {
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      setImageFunction(uri);
-      const imageUrl = await uploadImageToStorage(uri);
-      return imageUrl;
+      setVehiclePhoto(uri);
     }
   };
 
-  const uploadImageToStorage = async (uri) => {
-    const storage = getStorage();
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const filename = uri.substring(uri.lastIndexOf('/') + 1);
-    const storageRef = ref(storage, `images/${filename}`);
-
-    await uploadBytes(storageRef, blob);
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+  const handleLimpiarCamposS = () => {
+    setYear('');
+    setBrand('');
+    setModel('');
+    setPricePerDay('');
+    setVehiclePhoto(null);
   };
 
   const handleRegisterCar = async () => {
@@ -55,7 +48,7 @@ const RegisterCar = () => {
     }
 
     try {
-      const vehicleId = `Vehicle_${new Date().getTime()}`; 
+      const vehicleId = `Vehicle_${new Date().getTime()}`;
       await setDoc(doc(db, 'Vehicles', vehicleId), {
         year,
         brand,
@@ -66,12 +59,7 @@ const RegisterCar = () => {
         regDate: new Date().toISOString(),
       });
 
-      setYear('');
-      setBrand('');
-      setModel('');
-      setPricePerDay('');
-      setVehiclePhoto(null);
-
+      handleLimpiarCampos();
       Alert.alert('Éxito', 'Vehículo registrado correctamente');
     } catch (error) {
       Alert.alert('Error', 'No se pudo registrar el vehículo: ' + error.message);
@@ -82,14 +70,12 @@ const RegisterCar = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Volver</Text>
-        </TouchableOpacity>
         <Text style={styles.title}>Registrar Vehículo</Text>
         <TextInput
           onChangeText={setYear}
           value={year}
           placeholder="Año del Vehículo"
+          keyboardType="numeric"
           style={styles.input}
         />
         <TextInput
@@ -107,18 +93,27 @@ const RegisterCar = () => {
         <TextInput
           onChangeText={setPricePerDay}
           value={pricePerDay}
+          keyboardType="numeric"
           placeholder="Precio por Día"
           style={styles.input}
         />
-        <TouchableOpacity onPress={() => handleSelectPhoto(setVehiclePhoto)} style={styles.button}>
-          <Text style={styles.buttonText}>Seleccionar Foto</Text>
+
+        <TouchableOpacity onPress={handleSelectPhoto} style={styles.vehicleImageContainer}>
+          {vehiclePhoto ? (
+            <Image source={{ uri: vehiclePhoto }} style={styles.vehicleImage} />
+          ) : (
+            <Text style={styles.imagePlaceholderText}>Tocar para seleccionar imagen</Text>
+          )}
         </TouchableOpacity>
-        {vehiclePhoto && (
-          <Image source={{ uri: vehiclePhoto }} style={styles.vehicleImage} />
-        )}
-        <TouchableOpacity onPress={handleRegisterCar} style={styles.submitButton}>
-          <Text style={styles.submitButtonText}>Registrar Vehículo</Text>
-        </TouchableOpacity>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={handleRegisterCar} style={styles.submitButton}>
+            <Text style={styles.submitButtonText}>Registrar Vehículo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLimpiarCamposS} style={styles.limpiarButton}>
+            <Text style={styles.limpiarButtonText}>Limpiar Campos</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -137,49 +132,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 20,
   },
-  backButton: {
-    marginBottom: 20,
-  },
-  backButtonText: {
-    color: '#000',
-    fontSize: 16,
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
   },
-  button: {
-    backgroundColor: '#15297C',
+  input: {
+    borderWidth: 2,
+    borderColor: '#000',
     padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
+    width: '90%',
+    marginBottom: 10,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
   },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-  },
-  vehicleImage: {
+  vehicleImageContainer: {
     width: 200,
     height: 200,
     marginTop: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f0f0f0',
+  },
+  vehicleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholderText: {
+    color: '#ccc',
+    fontSize: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginTop: 20,
   },
   submitButton: {
     backgroundColor: '#4CAF50',
     padding: 10,
     borderRadius: 5,
-    marginTop: 20,
+    flex: 1,
+    marginRight: 10,
+  },
+  limpiarButton: {
+    backgroundColor: '#f44336',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
   },
   submitButtonText: {
     color: '#fff',
     textAlign: 'center',
   },
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    width: '90%',
+  limpiarButtonText: {
+    color: '#fff',
+    textAlign: 'center',
   },
 });
 
