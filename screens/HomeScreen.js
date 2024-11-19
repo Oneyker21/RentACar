@@ -137,12 +137,14 @@ export default HomeScreen = () => {
                             style={styles.input}
                             placeholder="Año"
                             value={editableVehicle.year}
+                            keyboardType="numeric"
                             onChangeText={(text) => setEditableVehicle({ ...editableVehicle, year: text })}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Precio/Día"
                             value={editableVehicle.pricePerDay}
+                            keyboardType="numeric"
                             onChangeText={(text) => setEditableVehicle({ ...editableVehicle, pricePerDay: text })}
                         />
                         <View style={styles.buttonContainer}>
